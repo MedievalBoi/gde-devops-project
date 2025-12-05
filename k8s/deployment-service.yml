@@ -1,0 +1,55 @@
+# 1. Kubernetes Deployment Object
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-app-deployment
+  labels:
+    app: devops-app
+spec:
+  # Egynél több replika (Pod) futtatása
+  replicas: 3
+  selector:
+    matchLabels:
+      app: devops-app
+  template:
+    metadata:
+      labels:
+        app: devops-app
+    spec:
+      containers:
+      - name: devops-flask-container
+        image: registry.gitlab.com/isabel8600/devops-beadando:latest
+        ports:
+        - containerPort: 8080
+        
+        # Környezeti változók beállítása
+        env:
+        - name: K8S_VERSION_INFO
+          valueFrom:
+            configMapKeyRef:
+              name: devops-config # A ConfigMap neve
+              key: VERSION_INFO    # A ConfigMap-ben tárolt kulcs
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: devops-config
+              key: APP_PORT
+        imagePullPolicy: IfNotPresent
+---
+
+# 2. Kubernetes Service Object (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-app-service
+  labels:
+    app: devops-app
+spec:
+  # ClusterIP típusú Service
+  type: ClusterIP
+  selector:
+    app: devops-app
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
